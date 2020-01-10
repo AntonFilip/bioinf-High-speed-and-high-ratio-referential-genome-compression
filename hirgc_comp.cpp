@@ -136,7 +136,7 @@ void match_target_sequence_with_reference_and_output_to_file(FILE *resulting_fil
         tuple_value = tuple_value & ((1 << 2 * k) - 1); // used to remove bits on indexes higher than 2 * k (older character that we don't need)
         int tuple_hash = tuple_value % hash_table_length; // tuple's hash is tuple's value modulo hash_table_length
         int tuple_index = encoded_char_index - (k - 1); //index of tuple if different from index of current character (different by k - 1)
-        
+    }
 }
 
 int main(int argc, char *argv[]) {
