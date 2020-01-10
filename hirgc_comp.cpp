@@ -10,7 +10,7 @@ const int MAX_CHAR_NUM = 1 << 28; //maximum length of a chromosome
 int *encoded_reference_sequence;
 int *latest_index;
 int *previous_index;
-const int max_arr_num = 1<<30; // maximum length of hash table
+const int hash_table_length = 1 << 30; // maximum length of hash table
 int ref_sq_len;
 
 int encoding_rule(char ch) {
@@ -30,13 +30,13 @@ int encoding_rule(char ch) {
 
 inline void init() {
     encoded_reference_sequence = new int[MAX_CHAR_NUM];
-    for (int i = 0; i < max_arr_num; i++) {//initial entries
+    for (int i = 0; i < hash_table_length; i++) {//initial entries
         latest_index[i] = -1;
     }
 }
 
-ifstream open_file_stream(char *arg) {
-    string ref_file(arg);
+ifstream open_file_stream(char *file_path) {
+    string ref_file(file_path);
     ifstream in("../" + ref_file);
 
     if (!in) {
@@ -47,9 +47,9 @@ ifstream open_file_stream(char *arg) {
 }
 
 /* Reads reference file and store's nucleotide bases' characters in 0-3 encoding to encoded_reference_sequence array */
-void reference_file_to_encoded_sequence(char *arg) {
+void reference_file_to_encoded_sequence(char *reference_file_path) {
 
-    ifstream in = open_file_stream(arg);
+    ifstream in = open_file_stream(reference_file_path);
     int str_len, encoded;
     char temp_c;
     char str[1024];
@@ -75,7 +75,9 @@ void read_target_file(char *arg) {
 }
 
 void construct_hash_table(int *encoded_reference_sequence) {
+    for (int i = 0; i < sizeof(encoded_reference_sequence); i++) {
 
+    }
 }
 
 int main(int argc, char *argv[]) {
