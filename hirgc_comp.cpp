@@ -13,6 +13,14 @@ int *previous_index;
 const int hash_table_length = 1 << 30; // maximum length of hash table
 int ref_sq_len;
 
+int *newline_indices = new int[1 << 20];
+int *lower_sq_begin_indices = new int[1 << 20];
+int *lower_sq_lengths = new int[1 << 20];
+int *n_sq_begin_indices = new int[1 << 20];
+int *n_sq_lengths = new int[1 << 20];
+int *other_char_indices = new int[1 << 20];
+char *other_chars = new char[1 << 20];
+
 int encoding_rule(char ch) {
     switch (ch) {
         case 'A':
@@ -70,8 +78,34 @@ void reference_file_to_encoded_sequence(char *reference_file_path) {
     in.close();
 }
 
-void read_target_file(char *arg) {
+/*creates auxiliary data from target file*/
+void extract_auxiliary_info_from_tar_file(char *filepath) {
+    ifstream in = open_file_stream(filepath);
+    char str[1024];
+    char id[100];
+    char temp_char;
+    int line_length;
+    bool previous_upper = true;
+    bool previous_n = true;
+    int lower_sq_len = 0, n_sq_len = 0, other_char_len = 0, newline_len = 0;
+    int file_pos_index = 0;
 
+    in.getline(id, 100);
+
+    while (in.getline(str, 1024)) {
+        line_length = strlen(str);
+        for (int i = 0; i < line_length; i++) {
+            temp_char = str[i];
+            if (islower(temp_char)) {
+                if (previous_upper) {
+                    previous_upper = false;
+                    lower_sq_begin_indices[lower_sq_len] = file_pos_index;
+                }
+                temp_char = toupper(temp_char);
+            }
+            file_pos_index++;
+        }
+    }
 }
 
 void construct_hash_table(int *encoded_reference_sequence) {
