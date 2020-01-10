@@ -12,8 +12,8 @@ int encoded_reference_sequence_len = 0;
 int encoded_target_sequence_len = 0;
 int k = 4;
 int *encoded_reference_sequence = new int[max_chromosome_length];;
-int *previous_index = new int[max_chromosome_length];
-int *latest_index = new int[hash_table_length];
+int *previous_hashed_tuple_index = new int[max_chromosome_length];
+int *last_hashed_tuple_index = new int[hash_table_length];
 
 int *newline_indices = new int[1 << 20];
 int *lower_sq_begin_indices = new int[1 << 20];
@@ -41,7 +41,7 @@ int encoding_rule(char ch) {
 
 inline void init() {
     for (int i = 0; i < hash_table_length; i++) {//initial entries
-        latest_index[i] = -1;
+        last_hashed_tuple_index[i] = -1;
     }
 }
 
@@ -195,34 +195,56 @@ void construct_hash_table(int *encoded_reference_sequence) {
     for (int encoded_char_index = 0; encoded_char_index < encoded_reference_sequence_len; encoded_char_index++) {
         tuple_value = tuple_value << 2; // shift to left to make "room" for new encoded character
         tuple_value += encoded_reference_sequence[encoded_char_index]; // add new encoded character to tuple
-        if (encoded_char_index <
-            k - 1) { // used to skip first k - 1 values (characters) because we need exactly k values for tuples
+        if (encoded_char_index < k - 1) { // used to skip first k - 1 values (characters) because we need exactly k values for tuples
             continue;
         }
-        tuple_value = tuple_value & ((1 << 2 * k) -
-                                     1); // used to remove bits on indexes higher than 2 * k (older character that we don't need)
+        tuple_value = tuple_value & ((1 << 2 * k) - 1); // used to remove bits on indexes higher than 2 * k (older character that we don't need)
         int tuple_hash = tuple_value % hash_table_length; // tuple's hash is tuple's value modulo hash_table_length
-        int tuple_index = encoded_char_index -
-                          (k - 1); //index of tuple if different from index of current character (different by k - 1)
-        previous_index[tuple_index] = latest_index[tuple_hash];
-        latest_index[tuple_hash] = tuple_index;
+        int tuple_index = encoded_char_index - (k - 1); //index of tuple if different from index of current character (different by k - 1)
+        previous_hashed_tuple_index[tuple_index] = last_hashed_tuple_index[tuple_hash];
+        last_hashed_tuple_index[tuple_hash] = tuple_index;
     }
 }
 
 void match_target_sequence_with_reference_and_output_to_file(FILE *resulting_file) {
-    uint64_t tuple_value = 0; // number of bits in tuple_value has to be 2 * k
-    for (int encoded_char_index = 0; encoded_char_index < encoded_reference_sequence_len; encoded_char_index++) {
-        tuple_value = tuple_value << 2; // shift to left to make "room" for new encoded character
-        tuple_value += encoded_reference_sequence[encoded_char_index]; // add new encoded character to tuple
-        if (encoded_char_index <
-            k - 1) { // used to skip first k - 1 values (characters) because we need exactly k values for tuples
-            continue;
+    int target_tuple_index, mismatch_index = 0;
+    while (target_tuple_index < encoded_target_sequence_len - k) {
+        uint64_t target_tuple_value = 0; // number of bits in target_tuple_value has to be 2 * k
+        for (int j = 0; j < k; j++) {
+            target_tuple_value = target_tuple_value << 2; // shift to left to make "room" for new encoded character
+            target_tuple_value += encoded_target_sequence[target_tuple_index + j]; // add new encoded character to tuple
         }
-        tuple_value = tuple_value & ((1 << 2 * k) -
-                                     1); // used to remove bits on indexes higher than 2 * k (older character that we don't need)
-        int tuple_hash = tuple_value % hash_table_length; // tuple's hash is tuple's value modulo hash_table_length
-        int tuple_index = encoded_char_index -
-                          (k - 1); //index of tuple if different from index of current character (different by k - 1)
+        int target_tuple_hash = target_tuple_value % hash_table_length; // tuple's hash is tuple's value modulo hash_table_length
+
+        int reference_tuple_index = last_hashed_tuple_index[target_tuple_hash];
+
+        int longest_match_index = -1;
+        int longest_match_length = 0;
+
+        while (reference_tuple_index != -1) {
+            int current_match_length = 0;
+            while (encoded_reference_sequence[reference_tuple_index + current_match_length] == encoded_target_sequence[target_tuple_index + current_match_length]){
+                current_match_length += 1;
+            }
+            if (current_match_length > k && current_match_length > longest_match_length) {
+                longest_match_index = reference_tuple_index;
+                longest_match_length = current_match_length;
+            }
+            reference_tuple_index = previous_hashed_tuple_index[reference_tuple_index];
+        }
+        if (longest_match_length > 0) {
+            bool foundMismatch = false;
+            for (int i = mismatch_index; i <= target_tuple_index - 1; i++) {
+                foundMismatch = true;
+                fprintf(resulting_file, "%s", encoded_target_sequence[i]);
+            }
+            if (foundMismatch) {
+                fprintf(resulting_file, "\n");
+            }
+            fprintf(resulting_file, "%d %d\n", longest_match_index, longest_match_length);
+            mismatch_index = target_tuple_index + longest_match_length;
+        }
+        target_tuple_index += longest_match_length + 1;
     }
 }
 
