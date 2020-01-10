@@ -142,23 +142,50 @@ void extract_auxiliary_info_from_tar_file(char *filepath) {
 
             file_pos_index++;
         }
-        newline_indices[newline_len++] = line_length;
+        newline_indices[newline_len] = line_length;
+        newline_len++;
     }
 
     if (!previous_upper) {
-        lower_sq_lengths[lower_sq_len] = file_pos_index - lower_sq_begin_indices[lower_sq_len] + 1;
+        lower_sq_lengths[lower_sq_len] = file_pos_index - lower_sq_begin_indices[lower_sq_len];
+        lower_sq_len++;
     }
 
-    if (!previous_n) {
-        n_sq_lengths[n_sq_len] = file_pos_index - n_sq_begin_indices[n_sq_len] + 1;
+    if (previous_n) {
+        n_sq_lengths[n_sq_len] = file_pos_index - n_sq_begin_indices[n_sq_len];
+        n_sq_len++;
     }
 
-//    for(int i =0; i < encoded_target_sequence_len; i++){
+//    for (int i = 0; i < encoded_target_sequence_len; i++) {
 //        cout << encoded_target_sequence[i];
 //    }
-
-//    for(int i =0; i < lower_sq_len; i++){
-//        cout << encoded_target_sequence[i] <<
+//
+//    cout << "\n";
+//    cout << "\n";
+//
+//    for (int i = 0; i < lower_sq_len; i++) {
+//        cout << lower_sq_begin_indices[i] << " " << lower_sq_lengths[i] << "\n";
+//    }
+//
+//    cout << "\n";
+//    cout << "\n";
+//
+//    for (int i = 0; i < other_char_len; i++) {
+//        cout << other_char_indices[i] << " " << other_chars[i] << "\n";
+//    }
+//
+//    cout << "\n";
+//    cout << "\n";
+//
+//    for (int i = 0; i < n_sq_len; i++) {
+//        cout << n_sq_begin_indices[i] << " " << n_sq_lengths[i] << "\n";
+//    }
+//
+//    cout << "\n";
+//    cout << "\n";
+//
+//    for (int i = 0; i < newline_len; i++) {
+//        cout << newline_indices[i] << " " ;
 //    }
 }
 
@@ -168,12 +195,15 @@ void construct_hash_table(int *encoded_reference_sequence) {
     for (int encoded_char_index = 0; encoded_char_index < encoded_reference_sequence_len; encoded_char_index++) {
         tuple_value = tuple_value << 2; // shift to left to make "room" for new encoded character
         tuple_value += encoded_reference_sequence[encoded_char_index]; // add new encoded character to tuple
-        if (encoded_char_index < k - 1) { // used to skip first k - 1 values (characters) because we need exactly k values for tuples
+        if (encoded_char_index <
+            k - 1) { // used to skip first k - 1 values (characters) because we need exactly k values for tuples
             continue;
         }
-        tuple_value = tuple_value & ((1 << 2 * k) - 1); // used to remove bits on indexes higher than 2 * k (older character that we don't need)
+        tuple_value = tuple_value & ((1 << 2 * k) -
+                                     1); // used to remove bits on indexes higher than 2 * k (older character that we don't need)
         int tuple_hash = tuple_value % hash_table_length; // tuple's hash is tuple's value modulo hash_table_length
-        int tuple_index = encoded_char_index - (k - 1); //index of tuple if different from index of current character (different by k - 1)
+        int tuple_index = encoded_char_index -
+                          (k - 1); //index of tuple if different from index of current character (different by k - 1)
         previous_index[tuple_index] = latest_index[tuple_hash];
         latest_index[tuple_hash] = tuple_index;
     }
@@ -184,12 +214,15 @@ void match_target_sequence_with_reference_and_output_to_file(FILE *resulting_fil
     for (int encoded_char_index = 0; encoded_char_index < encoded_reference_sequence_len; encoded_char_index++) {
         tuple_value = tuple_value << 2; // shift to left to make "room" for new encoded character
         tuple_value += encoded_reference_sequence[encoded_char_index]; // add new encoded character to tuple
-        if (encoded_char_index < k - 1) { // used to skip first k - 1 values (characters) because we need exactly k values for tuples
+        if (encoded_char_index <
+            k - 1) { // used to skip first k - 1 values (characters) because we need exactly k values for tuples
             continue;
         }
-        tuple_value = tuple_value & ((1 << 2 * k) - 1); // used to remove bits on indexes higher than 2 * k (older character that we don't need)
+        tuple_value = tuple_value & ((1 << 2 * k) -
+                                     1); // used to remove bits on indexes higher than 2 * k (older character that we don't need)
         int tuple_hash = tuple_value % hash_table_length; // tuple's hash is tuple's value modulo hash_table_length
-        int tuple_index = encoded_char_index - (k - 1); //index of tuple if different from index of current character (different by k - 1)
+        int tuple_index = encoded_char_index -
+                          (k - 1); //index of tuple if different from index of current character (different by k - 1)
     }
 }
 
