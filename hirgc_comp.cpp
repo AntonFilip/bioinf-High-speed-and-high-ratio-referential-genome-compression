@@ -6,12 +6,13 @@
 
 using namespace std;
 
-const int MAX_CHAR_NUM = 1 << 28; //maximum length of a chromosome
-int *encoded_reference_sequence;
-int *latest_index;
-int *previous_index;
+const int max_chromosome_length = 1 << 28; //maximum length of a chromosome
 const int hash_table_length = 1 << 30; // maximum length of hash table
-int ref_sq_len;
+int encoded_reference_sequence_len = 0;
+int k = 4;
+int *encoded_reference_sequence = new int[max_chromosome_length];;
+int *previous_index = new int[max_chromosome_length];
+int *latest_index = new int[hash_table_length];
 
 int *newline_indices = new int[1 << 20];
 int *lower_sq_begin_indices = new int[1 << 20];
@@ -37,7 +38,6 @@ int encoding_rule(char ch) {
 }
 
 inline void init() {
-    encoded_reference_sequence = new int[MAX_CHAR_NUM];
     for (int i = 0; i < hash_table_length; i++) {//initial entries
         latest_index[i] = -1;
     }
@@ -71,7 +71,7 @@ void reference_file_to_encoded_sequence(char *reference_file_path) {
             }
             encoded = encoding_rule(temp_c);
             if (encoded > -1) {
-                encoded_reference_sequence[ref_sq_len++] = encoded;
+                encoded_reference_sequence[encoded_reference_sequence_len++] = encoded;
             }
         }
     }
@@ -109,8 +109,18 @@ void extract_auxiliary_info_from_tar_file(char *filepath) {
 }
 
 void construct_hash_table(int *encoded_reference_sequence) {
-    for (int i = 0; i < sizeof(encoded_reference_sequence); i++) {
-
+    uint64_t tupleValue = 0; // number of bits in tupleValue has to be 2 * k
+    for (int encodedCharIndex = 0; encodedCharIndex < encoded_reference_sequence_len; encodedCharIndex++) {
+        tupleValue = tupleValue << 2;
+        tupleValue += encoded_reference_sequence[encodedCharIndex];
+        if (encodedCharIndex < k - 1) { // used to skip first k - 1 values (characters)
+            continue;
+        }
+        tupleValue = tupleValue & ((1 << 2 * k) - 1); // used to remove bits on indexes higher than 2 * k
+        int tupleHash = tupleValue % hash_table_length; // tuple's hash is tuple's value modulo hash_table_length
+        int tupleIndex = encodedCharIndex - (k - 1); //index of tuple if different from index of current character (different by k - 1)
+        previous_index[tupleIndex] = latest_index[tupleHash];
+        latest_index[tupleHash] = tupleIndex;
     }
 }
 
