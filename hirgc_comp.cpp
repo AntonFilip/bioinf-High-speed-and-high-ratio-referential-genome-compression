@@ -6,8 +6,8 @@
 
 using namespace std;
 
-const int max_chromosome_length = 1 << 24; //maximum length of a chromosome
-const int hash_table_length = 1 << 24; // maximum length of hash table
+const int max_chromosome_length = 1 << 20; //maximum length of a chromosome
+const int hash_table_length = 1 << 20; // maximum length of hash table
 int encoded_reference_sequence_len = 0;
 int k = 4;
 int *encoded_reference_sequence = new int[max_chromosome_length];;
@@ -21,6 +21,7 @@ int *n_sq_begin_indices = new int[1 << 20];
 int *n_sq_lengths = new int[1 << 20];
 int *other_char_indices = new int[1 << 20];
 char *other_chars = new char[1 << 20];
+int *encoded_target_sequence = new int[1 << 20];
 
 int encoding_rule(char ch) {
     switch (ch) {
@@ -86,9 +87,10 @@ void extract_auxiliary_info_from_tar_file(char *filepath) {
     char temp_char;
     int line_length;
     bool previous_upper = true;
-    bool previous_n = true;
-    int lower_sq_len = 0, n_sq_len = 0, other_char_len = 0, newline_len = 0;
+    bool previous_n = false;
+    int lower_sq_len = 0, n_sq_len = 0, other_char_len = 0, newline_len = 0, encoded_target_len = 0;
     int file_pos_index = 0;
+    int current_encoded_char = -1;
 
     in.getline(id, 100);
 
@@ -102,10 +104,51 @@ void extract_auxiliary_info_from_tar_file(char *filepath) {
                     lower_sq_begin_indices[lower_sq_len] = file_pos_index;
                 }
                 temp_char = toupper(temp_char);
+            } else {
+                if (!previous_upper) {
+                    previous_upper = true;
+                    lower_sq_lengths[lower_sq_len] = file_pos_index - lower_sq_begin_indices[lower_sq_len];
+                    lower_sq_len++;
+                }
             }
+
             file_pos_index++;
+
+            if (temp_char != 'N') {
+                current_encoded_char = encoding_rule(temp_char);
+                if (current_encoded_char > -1) {
+                    encoded_target_sequence[encoded_target_len++] = current_encoded_char;
+                } else {
+                    other_char_indices[other_char_len] = file_pos_index;
+                    other_chars[other_char_len] = temp_char;
+                    other_char_len++;
+                }
+            }
+
+            if (!previous_n) {
+                if (temp_char == 'N') {
+                    previous_n = true;
+                    n_sq_begin_indices[n_sq_len] = file_pos_index;
+                }
+            } else {
+                if (temp_char != 'N') {
+                    previous_n = false;
+                    n_sq_lengths[n_sq_len] = file_pos_index - n_sq_begin_indices[n_sq_len];
+                    n_sq_len++;
+                }
+            }
         }
+        newline_indices[newline_len++] = line_length;
     }
+
+    if (!previous_upper) {
+        lower_sq_lengths[lower_sq_len] = file_pos_index - lower_sq_begin_indices[lower_sq_len] + 1;
+    }
+
+    if (!previous_n) {
+        n_sq_lengths[n_sq_len] = file_pos_index - n_sq_begin_indices[n_sq_len] + 1;
+    }
+
 }
 
 /* constructs hash table from reference chromosome sequence */
