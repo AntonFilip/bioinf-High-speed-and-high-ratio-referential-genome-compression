@@ -10,12 +10,9 @@ const int max_chromosome_length = 1 << 24; //maximum length of a chromosome
 const int hash_table_length = 1 << 20; // maximum length of hash table
 int encoded_reference_sequence_len = 0;
 int encoded_target_sequence_len = 0;
-<<<<<<< Updated upstream
 int k = 20;
-=======
-int k = 4;
-int newline_len = 0;
->>>>>>> Stashed changes
+int newline_len = 0, lower_sq_len = 0, n_sq_len = 0, other_char_len = 0;
+
 int *encoded_reference_sequence = new int[max_chromosome_length];;
 int *previous_hashed_tuple_index = new int[max_chromosome_length];
 int *last_hashed_tuple_index = new int[hash_table_length];
@@ -95,7 +92,6 @@ void extract_auxiliary_info_from_tar_file(char *filepath) {
     int line_length;
     bool previous_upper = true;
     bool previous_n = false;
-    int lower_sq_len = 0, n_sq_len = 0, other_char_len = 0;
     int file_pos_index = 0;
     int current_encoded_char = -1;
 
@@ -120,7 +116,6 @@ void extract_auxiliary_info_from_tar_file(char *filepath) {
                     lower_sq_len++;
                 }
             }
-
 
             if (!previous_n) {
                 if (temp_char == 'N') {
@@ -161,47 +156,14 @@ void extract_auxiliary_info_from_tar_file(char *filepath) {
         n_sq_lengths[n_sq_len] = file_pos_index - n_sq_begin_indices[n_sq_len];
         n_sq_len++;
     }
-
-    for (int i = 0; i < encoded_target_sequence_len; i++) {
-        cout << encoded_target_sequence[i];
-    }
-
-    cout << "\n";
-    cout << "\n";
-
-    for (int i = 0; i < lower_sq_len; i++) {
-        cout << lower_sq_begin_indices[i] << " " << lower_sq_lengths[i] << "\n";
-    }
-
-    cout << "\n";
-    cout << "\n";
-
-    for (int i = 0; i < other_char_len; i++) {
-        cout << other_char_indices[i] << " " << other_chars[i] << "\n";
-    }
-
-    cout << "\n";
-    cout << "\n";
-
-    for (int i = 0; i < n_sq_len; i++) {
-        cout << n_sq_begin_indices[i] << " " << n_sq_lengths[i] << "\n";
-    }
-
-    cout << "\n";
-    cout << "\n";
-
-    for (int i = 0; i < newline_len; i++) {
-        cout << newline_indices[i] << " " ;
-    }
 }
 
 /* Encodes data that has many repeating values by storing their value and running length.
  * Writes the encoded and formatted data to the given file.
  * Example: 21 21 21 21 21 21 5 5 5 7 7 7 7 7 7 will be encoded as 21-6 5-3 7-6*/
 
-void runLengthEncoding(FILE* fp){
+void runLengthEncoding(ofstream& outfile){
 
-    cout << "\n";
     int first = newline_indices[0];
     int curr = newline_indices[0];
     int same_cnt = 0;
@@ -211,8 +173,7 @@ void runLengthEncoding(FILE* fp){
         if(curr == first){
             same_cnt++;
         } else{
-            //fprintf(fp,"%d-%d ", curr, same_cnt);
-            printf("%d-%d ", first, same_cnt);
+            outfile << first << "-" << same_cnt << " ";
             first = curr;
             same_cnt=0;
             i--;
@@ -221,12 +182,39 @@ void runLengthEncoding(FILE* fp){
         curr = newline_indices[i];
 
     }
-    printf("%d-%d ", first, same_cnt);
+    outfile << first << "-" << same_cnt << "\n";
 
 }
 
-void saveTargetFileAndAuxiliaryData(){
+void saveTargetFileAndAuxiliaryData(ofstream& outfile){
 
+    //write lower sequence begin positions and length of those sequences
+    for (int i = 0; i < lower_sq_len; i++) {
+        outfile << lower_sq_begin_indices[i] << " " << lower_sq_lengths[i] << " ";
+    }
+    outfile << "\n";
+
+    //write other char positions and their values
+    for (int i = 0; i < other_char_len; i++) {
+        outfile << other_char_indices[i] << " " << other_chars[i] << " ";
+    }
+    outfile << "\n";
+
+    //write N sequence positions and their lengths
+    for (int i = 0; i < n_sq_len; i++) {
+        outfile << n_sq_begin_indices[i] << " " << n_sq_lengths[i] << " ";
+    }
+    outfile << "\n\n";
+
+    //for (int i = 0; i < newline_len; i++) {
+    //    outfile << newline_indices[i] << " " ;
+    //}
+
+    // write encoded target sequences to file
+    for (int i = 0; i < encoded_target_sequence_len; i++) {
+        outfile << encoded_target_sequence[i];
+        cout << encoded_target_sequence[i];
+    }
 }
 
 /* constructs hash table from reference chromosome sequence */
@@ -312,12 +300,17 @@ int main(int argc, char *argv[]) {
     sprintf(resulting_file_name, "%s_ref_%s", target_file, reference_file);
     FILE *resulting_file = fopen("result.txt", "w");
 
+    ofstream outfile;
+    outfile.open("C:\\Users\\marko\\Desktop\\meta.txt");
+
     //reference_file_to_encoded_sequence(reference_file);
     //construct_hash_table(encoded_reference_sequence);
     extract_auxiliary_info_from_tar_file(target_file);
-    runLengthEncoding(nullptr);
+    runLengthEncoding(outfile);
+    saveTargetFileAndAuxiliaryData(outfile);
     //match_target_sequence_with_reference_and_output_to_file(resulting_file);
 
+    outfile.close();
     fclose(resulting_file);
     return 0;
 }
