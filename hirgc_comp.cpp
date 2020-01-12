@@ -184,20 +184,27 @@ void encodeLineLengths(ofstream &outfile) {
 void outputTargetAuxiliaryData(ofstream &outfile) {
 
     //write lower sequence begin positions and length of those sequences
-    for (int i = 0; i < lower_sq_len; i++) {
-        outfile << lower_sq_begin_indices[i] << " " << lower_sq_lengths[i] << " ";
+    int i = 0;
+    for (i = 0; i < lower_sq_len - 1; i++) {
+        outfile << lower_sq_begin_indices[i] << "-" << lower_sq_lengths[i] << " ";
     }
-    outfile << "\n";
+    outfile << lower_sq_begin_indices[i] << "-" << lower_sq_lengths[i] << "\n";
 
     //write other char positions and their values
-    for (int i = 0; i < other_char_len; i++) {
-        outfile << other_char_indices[i] << " " << other_chars[i] << " ";
+    for (i = 0; i < other_char_len - 1; i++) {
+        outfile << other_char_indices[i] << "-" << other_chars[i] << " ";
+    }
+    if (i > 0 || other_char_len == 1) {
+        outfile << other_char_indices[i] << "-" << other_chars[i];
     }
     outfile << "\n";
 
     //write N sequence positions and their lengths
-    for (int i = 0; i < n_sq_len; i++) {
-        outfile << n_sq_begin_indices[i] << " " << n_sq_lengths[i] << " ";
+    for (i = 0; i < n_sq_len - 1; i++) {
+        outfile << n_sq_begin_indices[i] << "-" << n_sq_lengths[i] << " ";
+    }
+    if (i > 0 || n_sq_len == 1) {
+        outfile << n_sq_begin_indices[i] << "-" << n_sq_lengths[i];
     }
     outfile << "\n\n";
 }
