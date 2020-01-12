@@ -84,7 +84,7 @@ void reference_file_to_encoded_sequence(char *reference_file_path) {
 }
 
 /*creates auxiliary data from target file*/
-void extract_auxiliary_info_from_tar_file(char *filepath) {
+void extract_auxiliary_and_sequence_info_from_tar_file(char *filepath) {
     ifstream in = open_file_stream(filepath);
     char str[1024];
     char id[100];
@@ -186,7 +186,7 @@ void runLengthEncoding(ofstream& outfile){
 
 }
 
-void saveTargetFileAndAuxiliaryData(ofstream& outfile){
+void saveTargetAuxiliaryData(ofstream& outfile){
 
     //write lower sequence begin positions and length of those sequences
     for (int i = 0; i < lower_sq_len; i++) {
@@ -210,11 +210,11 @@ void saveTargetFileAndAuxiliaryData(ofstream& outfile){
     //    outfile << newline_indices[i] << " " ;
     //}
 
-    // write encoded target sequences to file
-    for (int i = 0; i < encoded_target_sequence_len; i++) {
-        outfile << encoded_target_sequence[i];
-        cout << encoded_target_sequence[i];
-    }
+//    // write encoded target sequences to file
+//    for (int i = 0; i < encoded_target_sequence_len; i++) {
+//        outfile << encoded_target_sequence[i];
+//        cout << encoded_target_sequence[i];
+//    }
 }
 
 /* constructs hash table from reference chromosome sequence */
@@ -236,8 +236,8 @@ void construct_hash_table(int *encoded_reference_sequence) {
     }
 }
 
-void match_target_sequence_with_reference_and_output_to_file(FILE *resulting_file) {
-    int target_tuple_index, mismatch_index = 0;
+void match_target_sequence_with_reference_and_output_to_file(ofstream& outfile) {
+    int target_tuple_index = 0, mismatch_index = 0;
     while (target_tuple_index < encoded_target_sequence_len - k + 1) {
         uint64_t target_tuple_value = 0; // number of bits in target_tuple_value has to be 2 * k
         for (int j = 0; j < k; j++) {
@@ -256,28 +256,28 @@ void match_target_sequence_with_reference_and_output_to_file(FILE *resulting_fil
             while ((reference_tuple_index + current_match_length < encoded_target_sequence_len) && (reference_tuple_index + current_match_length < encoded_reference_sequence_len) && encoded_reference_sequence[reference_tuple_index + current_match_length] == encoded_target_sequence[target_tuple_index + current_match_length]){
                 current_match_length += 1;
             }
-            if (current_match_length > k && current_match_length > longest_match_length) {
+            if (current_match_length >= k && current_match_length > longest_match_length) {
                 longest_match_index = reference_tuple_index;
                 longest_match_length = current_match_length;
             }
             reference_tuple_index = previous_hashed_tuple_index[reference_tuple_index];
         }
         if (longest_match_length > 0) {
-            bool foundMismatch = false;
+            bool found_mismatch = false;
             for (int i = mismatch_index; i <= target_tuple_index - 1; i++) {
-                foundMismatch = true;
-                fprintf(resulting_file, "%d", encoded_target_sequence[i]);
+                found_mismatch = true;
+                outfile << encoded_target_sequence[i];
             }
-            if (foundMismatch) {
-                fprintf(resulting_file, "\n");
+            if (found_mismatch) {
+                outfile << "\n";
             }
-            fprintf(resulting_file, "%d %d\n", longest_match_index, longest_match_length);
+            outfile << longest_match_index << " " << longest_match_length << "\n";
             mismatch_index = target_tuple_index + longest_match_length;
         }
         target_tuple_index += longest_match_length + 1;
     }
-    for(; target_tuple_index < encoded_target_sequence_len; target_tuple_index++) {
-        fprintf(resulting_file, "%d", encoded_target_sequence[target_tuple_index]);
+    for(; mismatch_index < encoded_target_sequence_len; mismatch_index++) {
+        outfile << encoded_target_sequence[mismatch_index];
     }
 }
 
@@ -296,21 +296,20 @@ int main(int argc, char *argv[]) {
         target_file = argv[2];
     }
     reference_file = argv[1];
-    char resulting_file_name[100];
-    sprintf(resulting_file_name, "%s_ref_%s", target_file, reference_file);
-    FILE *resulting_file = fopen("result.txt", "w");
+//    char resulting_file_name[100];
+//    sprintf(resulting_file_name, "%s_ref_%s", target_file, reference_file);
+//    FILE *resulting_file = fopen("result.txt", "w");
 
     ofstream outfile;
-    outfile.open("C:\\Users\\marko\\Desktop\\meta.txt");
+    outfile.open("result.txt");
 
-    //reference_file_to_encoded_sequence(reference_file);
-    //construct_hash_table(encoded_reference_sequence);
-    extract_auxiliary_info_from_tar_file(target_file);
+    reference_file_to_encoded_sequence(reference_file);
+    construct_hash_table(encoded_reference_sequence);
+    extract_auxiliary_and_sequence_info_from_tar_file(target_file);
     runLengthEncoding(outfile);
-    saveTargetFileAndAuxiliaryData(outfile);
-    //match_target_sequence_with_reference_and_output_to_file(resulting_file);
+    saveTargetAuxiliaryData(outfile);
+    match_target_sequence_with_reference_and_output_to_file(outfile);
 
     outfile.close();
-    fclose(resulting_file);
     return 0;
 }
