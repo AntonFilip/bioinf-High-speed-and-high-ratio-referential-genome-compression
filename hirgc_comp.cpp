@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdexcept>
+# include <sys/time.h>
 
 using namespace std;
 
@@ -41,12 +42,6 @@ int encoding_rule(char ch) {
     }
 }
 
-inline void init() {
-    for (int i = 0; i < hash_table_length; i++) {//initial entries
-        last_hashed_tuple_index[i] = -1;
-    }
-}
-
 ifstream open_file_stream(char *file_path) {
     string ref_file(file_path);
     ifstream in("../" + ref_file);
@@ -59,7 +54,7 @@ ifstream open_file_stream(char *file_path) {
 }
 
 /* Reads reference file and store's nucleotide bases' characters in 0-3 encoding to encoded_reference_sequence array */
-void reference_file_to_encoded_sequence(char *reference_file_path) {
+void referenceFileToEncodedSequence(char *reference_file_path) {
 
     ifstream in = open_file_stream(reference_file_path);
     int str_len, encoded;
@@ -83,8 +78,8 @@ void reference_file_to_encoded_sequence(char *reference_file_path) {
     in.close();
 }
 
-/*creates auxiliary data from target file*/
-void extract_auxiliary_and_sequence_info_from_tar_file(char *filepath) {
+/* Extracts auxiliary data from target file */
+void extractAuxiliaryAndSequenceInfoFromTargetFile(char *filepath) {
     ifstream in = open_file_stream(filepath);
     char str[1024];
     char id[100];
@@ -162,20 +157,20 @@ void extract_auxiliary_and_sequence_info_from_tar_file(char *filepath) {
  * Writes the encoded and formatted data to the given file.
  * Example: 21 21 21 21 21 21 5 5 5 7 7 7 7 7 7 will be encoded as 21-6 5-3 7-6*/
 
-void runLengthEncoding(ofstream& outfile){
+void encodeLineLengths(ofstream &outfile) {
 
     int first = newline_indices[0];
     int curr = newline_indices[0];
     int same_cnt = 0;
 
-    for(int i=1; i < newline_len+1; i++){
+    for (int i = 1; i < newline_len + 1; i++) {
 
-        if(curr == first){
+        if (curr == first) {
             same_cnt++;
-        } else{
+        } else {
             outfile << first << "-" << same_cnt << " ";
             first = curr;
-            same_cnt=0;
+            same_cnt = 0;
             i--;
             continue;
         }
@@ -186,7 +181,7 @@ void runLengthEncoding(ofstream& outfile){
 
 }
 
-void saveTargetAuxiliaryData(ofstream& outfile){
+void outputTargetAuxiliaryData(ofstream &outfile) {
 
     //write lower sequence begin positions and length of those sequences
     for (int i = 0; i < lower_sq_len; i++) {
@@ -205,20 +200,15 @@ void saveTargetAuxiliaryData(ofstream& outfile){
         outfile << n_sq_begin_indices[i] << " " << n_sq_lengths[i] << " ";
     }
     outfile << "\n\n";
-
-    //for (int i = 0; i < newline_len; i++) {
-    //    outfile << newline_indices[i] << " " ;
-    //}
-
-//    // write encoded target sequences to file
-//    for (int i = 0; i < encoded_target_sequence_len; i++) {
-//        outfile << encoded_target_sequence[i];
-//        cout << encoded_target_sequence[i];
-//    }
 }
 
-/* constructs hash table from reference chromosome sequence */
-void construct_hash_table(int *encoded_reference_sequence) {
+/* Constructs hash table from reference chromosome sequence */
+void constructHashTable(int *encoded_reference_sequence) {
+    // initialize last_hashed_tuple_index array
+    for (int i = 0; i < hash_table_length; i++) {
+        last_hashed_tuple_index[i] = -1;
+    }
+
     uint64_t tuple_value = 0; // number of bits in tuple_value has to be 2 * k
     for (int encoded_char_index = 0; encoded_char_index < encoded_reference_sequence_len; encoded_char_index++) {
         tuple_value = tuple_value << 2; // shift to left to make "room" for new encoded character
@@ -227,41 +217,49 @@ void construct_hash_table(int *encoded_reference_sequence) {
             continue;
         }
         if (k < 32) {
-            tuple_value = tuple_value & (((uint64_t)1 << (2 * k)) - 1); // used to remove bits on indexes higher than 2 * k (older character that we don't need)
+            tuple_value = tuple_value & (((uint64_t) 1 << (2 * k)) - 1); // used to remove bits on indexes higher than 2 * k (older character that we don't need)
         }
-        int tuple_hash = tuple_value % (uint64_t)hash_table_length; // tuple's hash is tuple's value modulo hash_table_length
-        int tuple_index = encoded_char_index - (k - 1); //index of tuple if different from index of current character (different by k - 1)
+        int tuple_hash = tuple_value % (uint64_t) hash_table_length; // tuple's hash is tuple's value modulo hash_table_length
+        int tuple_index = encoded_char_index - (k - 1); // index of tuple if different from index of current character (different by k - 1)
         previous_hashed_tuple_index[tuple_index] = last_hashed_tuple_index[tuple_hash];
         last_hashed_tuple_index[tuple_hash] = tuple_index;
     }
 }
 
-void match_target_sequence_with_reference_and_output_to_file(ofstream& outfile) {
+void matchTargetSequenceWithReferenceAndOutputToFile(ofstream &outfile) {
     int target_tuple_index = 0, mismatch_index = 0;
     while (target_tuple_index < encoded_target_sequence_len - k + 1) {
+
         uint64_t target_tuple_value = 0; // number of bits in target_tuple_value has to be 2 * k
         for (int j = 0; j < k; j++) {
             target_tuple_value = target_tuple_value << 2; // shift to left to make "room" for new encoded character
             target_tuple_value += encoded_target_sequence[target_tuple_index + j]; // add new encoded character to tuple
         }
-        int target_tuple_hash = target_tuple_value % hash_table_length; // tuple's hash is tuple's value modulo hash_table_length
 
-        int reference_tuple_index = last_hashed_tuple_index[target_tuple_hash];
+        int target_tuple_hash = target_tuple_value % hash_table_length; // tuple's hash is tuple's value modulo hash_table_length
+        int reference_tuple_index = last_hashed_tuple_index[target_tuple_hash]; // reference_tuple_index stores index of a tuple in reference sequence that has the same hash as target tuple
 
         int longest_match_index = -1;
         int longest_match_length = 0;
 
-        while (reference_tuple_index != -1) {
+        while (reference_tuple_index != -1) { // repeat while there are more tuples left in the same bucket of a hash map
             int current_match_length = 0;
-            while ((reference_tuple_index + current_match_length < encoded_target_sequence_len) && (reference_tuple_index + current_match_length < encoded_reference_sequence_len) && encoded_reference_sequence[reference_tuple_index + current_match_length] == encoded_target_sequence[target_tuple_index + current_match_length]){
+            // count how many characters match from target and reference sequences
+            while ((reference_tuple_index + current_match_length < encoded_target_sequence_len) &&
+                   (reference_tuple_index + current_match_length < encoded_reference_sequence_len) &&
+                   encoded_reference_sequence[reference_tuple_index + current_match_length] ==
+                   encoded_target_sequence[target_tuple_index + current_match_length]) {
                 current_match_length += 1;
             }
+            // if we have new longest match, store it
             if (current_match_length >= k && current_match_length > longest_match_length) {
                 longest_match_index = reference_tuple_index;
                 longest_match_length = current_match_length;
             }
+            // fetch the next reference tuple (it's index) from a hash map bucket
             reference_tuple_index = previous_hashed_tuple_index[reference_tuple_index];
         }
+        // if we found that target sequence matches some sequence in reference file, write that info to file and also write if there was any mismatch in between current and previous sequence
         if (longest_match_length > 0) {
             bool found_mismatch = false;
             for (int i = mismatch_index; i <= target_tuple_index - 1; i++) {
@@ -274,40 +272,45 @@ void match_target_sequence_with_reference_and_output_to_file(ofstream& outfile) 
             outfile << longest_match_index << " " << longest_match_length << "\n";
             mismatch_index = target_tuple_index + longest_match_length;
         }
+        // jump to next sequence by adding longest match length to current index of target sequence
         target_tuple_index += longest_match_length + 1;
     }
-    for(; mismatch_index < encoded_target_sequence_len; mismatch_index++) {
+    // write to file if there are any mismatches left at the end of the target file
+    for (; mismatch_index < encoded_target_sequence_len; mismatch_index++) {
         outfile << encoded_target_sequence[mismatch_index];
     }
 }
 
 int main(int argc, char *argv[]) {
-    //init reference and target file pointers
-    char *reference_file = nullptr;
-    char *target_file = nullptr;
-
-    if (argc > 3 || argc < 2) {
+    // init reference and target file pointers, output stream
+    if (argc != 3) {
         cout << "Wrong number of arguments";
         return 0;
-    } else if (argc == 3) {
-        target_file = argv[2];
     }
-    reference_file = argv[1];
-//    char resulting_file_name[100];
-//    sprintf(resulting_file_name, "%s_ref_%s", target_file, reference_file);
-//    FILE *resulting_file = fopen("result.txt", "w");
+    char *reference_file = argv[1];
+    char *target_file = argv[2];
+    ofstream output_file;
+    output_file.open("result2.txt");
 
-    ofstream outfile;
-    outfile.open("result2.txt");
+    // init compression timers
+    struct timeval start;
+    struct timeval end;
+    unsigned long timer;
+    gettimeofday(&start, NULL);
 
-    init();
-    reference_file_to_encoded_sequence(reference_file);
-    construct_hash_table(encoded_reference_sequence);
-    extract_auxiliary_and_sequence_info_from_tar_file(target_file);
-    runLengthEncoding(outfile);
-    saveTargetAuxiliaryData(outfile);
-    match_target_sequence_with_reference_and_output_to_file(outfile);
+    // steps of the algorithm
+    referenceFileToEncodedSequence(reference_file);
+    constructHashTable(encoded_reference_sequence);
+    extractAuxiliaryAndSequenceInfoFromTargetFile(target_file);
+    encodeLineLengths(output_file);
+    outputTargetAuxiliaryData(output_file);
+    matchTargetSequenceWithReferenceAndOutputToFile(output_file);
 
-    outfile.close();
+    output_file.close();
+
+    gettimeofday(&end, NULL);
+    timer = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
+    printf("total compression timer = %lf ms; %lf min\n", timer / 1000.0, timer / 1000.0 / 1000.0 / 60.0);
+
     return 0;
 }
