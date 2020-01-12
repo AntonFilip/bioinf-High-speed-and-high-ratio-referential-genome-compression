@@ -291,7 +291,7 @@ int main(int argc, char *argv[]) {
     char *reference_file = argv[1];
     char *target_file = argv[2];
     ofstream output_file;
-    char zip_command[150], output_file_name[100];
+    char terminal_command[150], output_file_name[100];
 
     sprintf(output_file_name, "%s_ref_%s", target_file, reference_file);
 
@@ -313,8 +313,11 @@ int main(int argc, char *argv[]) {
 
     output_file.close();
 
-    sprintf(zip_command, "./7za a %s.7z %s -m0=PPMd", output_file_name, output_file_name);
-    system(zip_command);
+    sprintf(terminal_command, "./7za a %s.7z %s -m0=PPMd", output_file_name, output_file_name);
+    system(terminal_command);
+    sprintf(terminal_command, "rm %s", output_file_name);
+    system(terminal_command);
+
 
     gettimeofday(&end, NULL);
     timer = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
