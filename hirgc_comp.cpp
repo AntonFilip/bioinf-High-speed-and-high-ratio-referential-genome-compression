@@ -6,7 +6,7 @@
 
 using namespace std;
 
-const int max_chromosome_length = 1 << 24; //maximum length of a chromosome
+const int max_chromosome_length = 1 << 28; //maximum length of a chromosome
 const int hash_table_length = 1 << 20; // maximum length of hash table
 int encoded_reference_sequence_len = 0;
 int encoded_target_sequence_len = 0;
@@ -17,14 +17,14 @@ int *encoded_reference_sequence = new int[max_chromosome_length];;
 int *previous_hashed_tuple_index = new int[max_chromosome_length];
 int *last_hashed_tuple_index = new int[hash_table_length];
 
-int *newline_indices = new int[1 << 20];
-int *lower_sq_begin_indices = new int[1 << 20];
-int *lower_sq_lengths = new int[1 << 20];
-int *n_sq_begin_indices = new int[1 << 20];
-int *n_sq_lengths = new int[1 << 20];
-int *other_char_indices = new int[1 << 20];
-char *other_chars = new char[1 << 20];
-int *encoded_target_sequence = new int[1 << 20];
+int *newline_indices = new int[max_chromosome_length];
+int *lower_sq_begin_indices = new int[max_chromosome_length];
+int *lower_sq_lengths = new int[max_chromosome_length];
+int *n_sq_begin_indices = new int[max_chromosome_length];
+int *n_sq_lengths = new int[max_chromosome_length];
+int *other_char_indices = new int[max_chromosome_length];
+char *other_chars = new char[max_chromosome_length];
+int *encoded_target_sequence = new int[max_chromosome_length];
 
 int encoding_rule(char ch) {
     switch (ch) {
@@ -229,7 +229,7 @@ void construct_hash_table(int *encoded_reference_sequence) {
         if (k < 32) {
             tuple_value = tuple_value & (((uint64_t)1 << (2 * k)) - 1); // used to remove bits on indexes higher than 2 * k (older character that we don't need)
         }
-        int tuple_hash = tuple_value % hash_table_length; // tuple's hash is tuple's value modulo hash_table_length
+        int tuple_hash = tuple_value % (uint64_t)hash_table_length; // tuple's hash is tuple's value modulo hash_table_length
         int tuple_index = encoded_char_index - (k - 1); //index of tuple if different from index of current character (different by k - 1)
         previous_hashed_tuple_index[tuple_index] = last_hashed_tuple_index[tuple_hash];
         last_hashed_tuple_index[tuple_hash] = tuple_index;
@@ -282,9 +282,6 @@ void match_target_sequence_with_reference_and_output_to_file(ofstream& outfile) 
 }
 
 int main(int argc, char *argv[]) {
-
-    init();
-
     //init reference and target file pointers
     char *reference_file = nullptr;
     char *target_file = nullptr;
@@ -301,8 +298,9 @@ int main(int argc, char *argv[]) {
 //    FILE *resulting_file = fopen("result.txt", "w");
 
     ofstream outfile;
-    outfile.open("result.txt");
+    outfile.open("result2.txt");
 
+    init();
     reference_file_to_encoded_sequence(reference_file);
     construct_hash_table(encoded_reference_sequence);
     extract_auxiliary_and_sequence_info_from_tar_file(target_file);
