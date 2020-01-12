@@ -287,10 +287,15 @@ int main(int argc, char *argv[]) {
         cout << "Wrong number of arguments";
         return 0;
     }
+
     char *reference_file = argv[1];
     char *target_file = argv[2];
     ofstream output_file;
-    output_file.open("result2.txt");
+    char zip_command[150], output_file_name[100];
+
+    sprintf(output_file_name, "%s_ref_%s", target_file, reference_file);
+
+    output_file.open(output_file_name);
 
     // init compression timers
     struct timeval start;
@@ -307,6 +312,9 @@ int main(int argc, char *argv[]) {
     matchTargetSequenceWithReferenceAndOutputToFile(output_file);
 
     output_file.close();
+
+    sprintf(zip_command, "./7za a %s.7z %s -m0=PPMd", output_file_name, output_file_name);
+    system(zip_command);
 
     gettimeofday(&end, NULL);
     timer = 1000000 * (end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
