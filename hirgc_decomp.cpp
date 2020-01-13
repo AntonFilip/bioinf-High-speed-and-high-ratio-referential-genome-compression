@@ -20,6 +20,7 @@ int other_char_array_len = 0;
 int letter_N_array_len = 0;
 
 char *reference_sequence = new char[max_chromosome_length];
+char *decompressed_sequence = new char[max_chromosome_length];
 char *target_sequence = new char[max_chromosome_length];
 int *line_ending_indexes = new int[max_lines_in_chromosome];
 int *line_ending_counts = new int[max_lines_in_chromosome];
