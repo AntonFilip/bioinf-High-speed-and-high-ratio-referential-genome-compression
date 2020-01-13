@@ -4,7 +4,6 @@
 #include <string.h>
 #include <stdexcept>
 #include <sys/time.h>
-#include <sstream>
 #include <vector>
 
 using namespace std;
@@ -118,7 +117,7 @@ void extractAuxiliaryInfoFromCompressedFile(char *filepath) {
     ifstream in = open_file_stream(filepath);
     char line[2 << 19];
 
-    in.getline(line, 100);
+    in.getline(line, 100); // used to skip line with chromosome identifier
     extractIndexAndCountInfo(&in, line, line_ending_indexes, line_ending_counts, &line_ending_array_len);
     extractIndexAndCountInfo(&in, line, lowercase_indexes, lowercase_counts, &lowercase_array_len);
     extractIndexAndCharInfo(&in, line, other_char_indexes, other_char_values, &other_char_array_len);
@@ -127,14 +126,17 @@ void extractAuxiliaryInfoFromCompressedFile(char *filepath) {
 
 void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
 
+    // first we fill in whole output sequence with placeholder character
     for (int i = 0; i < max_chromosome_length; i++) {
         decompressed_sequence[i] = '_';
     }
 
+    //write to output sequence 'other characters' from auxiliary data
     for (int i = 0; i < other_char_array_len; i++) {
         decompressed_sequence[other_char_indexes[i]] = other_char_values[i];
     }
 
+    //write to output sequence letter N to appropriate indexes
     for (int i = 0; i < letter_N_array_len; i++) {
         for (int j = letter_N_indexes[i]; j < letter_N_counts[i] + letter_N_indexes[i]; j++) {
             decompressed_sequence[j] = 'N';
@@ -145,6 +147,7 @@ void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
     int j = 0;
     int output_sequence_len = 0;
 
+    //write new line characters to appropriate indexes
     for (int i = 0; i < line_ending_array_len; i++) {
         int current_count = 0;
         while (current_count != line_ending_counts[i]) {
@@ -160,6 +163,7 @@ void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
     int output_file_index = 0;
     int reference_sequence_index = 0;
 
+    //extract and write choromosome identifier to output file
     for (int i = 0; i < 6; i++) {
         compressed_file.getline(compressed_file_line, 2 << 22);
         if (i == 0) {
@@ -171,9 +175,9 @@ void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
         }
     }
 
+    //read line by line information about matched and unmatched sequences and write them to output sequence
     while (compressed_file.getline(compressed_file_line, 2 << 22)) {
 
-        bool stop_condition = false;
         string mismatch_encoded_chars;
         bool matching = true;
         int index_of_match;
@@ -192,6 +196,7 @@ void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
 
         int length = matching ? match_count : mismatch_encoded_chars.size();
 
+        //write matched and mismatched sequences to output sequence
         for (int i = 0; i < length; i++) {
             if (decompressed_sequence[output_file_index] != '_') {
                 output_file_index++;
@@ -210,6 +215,7 @@ void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
         }
     }
 
+    //cast to lowercase
     for (int i = 0; i < lowercase_array_len; i++) {
         int index = lowercase_indexes[i];
         int count = lowercase_counts[i];
@@ -218,6 +224,7 @@ void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
         }
     }
 
+    //write output sequence to file
     for (int i = 0; i < output_sequence_len; i++) {
         output_file << decompressed_sequence[i];
     }
