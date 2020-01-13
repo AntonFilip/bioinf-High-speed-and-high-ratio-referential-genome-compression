@@ -138,8 +138,14 @@ void extractAuxiliaryAndSequenceInfoFromTargetFile(char *filepath) {
 
             file_pos_index++;
         }
+        if (previous_n) {
+            previous_n = false;
+            n_sq_lengths[n_sq_len] = file_pos_index - n_sq_begin_indices[n_sq_len];
+            n_sq_len++;
+        }
         newline_indices[newline_len] = line_length;
         newline_len++;
+        file_pos_index++;
     }
 
     if (!previous_upper) {
