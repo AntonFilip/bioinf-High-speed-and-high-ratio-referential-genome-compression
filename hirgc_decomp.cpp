@@ -131,8 +131,6 @@ void extractAuxiliaryInfoFromCompressedFile(char *filepath) {
 }
 
 void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
-    ifstream compressed_file = open_file_stream(compressed_file_path);
-    char compressed_file_line[1024];
 
     for (int i = 0; i < other_char_array_len; i++) {
         decompressed_sequence[other_char_indexes[i]] = other_char_values[i];
@@ -144,9 +142,6 @@ void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
         }
     }
 
-    int output_file_index = 0;
-    int output_file_ACGT_index = 0;
-
     for (int i = 0; i < line_ending_array_len; i++) {
         int current_index = line_ending_indexes[i];
         int current_count = 0;
@@ -157,9 +152,14 @@ void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
         }
     }
 
+    ifstream compressed_file = open_file_stream(compressed_file_path);
+    char compressed_file_line[1024];
+
+    int output_file_index = 0;
+    int output_file_ACGT_index = 0;
+
     int line_ending_array_index = 0;
     int current_line_ending_count = 0;
-
     int lowercase_array_index = 0;
     int other_char_array_index = 0;
     int letter_N_array_index = 0;
