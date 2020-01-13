@@ -14,6 +14,7 @@ int encoded_target_sequence_len = 0;
 int k = 20;
 int newline_len = 0, lower_sq_len = 0, n_sq_len = 0, other_char_len = 0;
 
+char id[100];
 int *encoded_reference_sequence = new int[max_chromosome_length];;
 int *previous_hashed_tuple_index = new int[max_chromosome_length];
 int *last_hashed_tuple_index = new int[hash_table_length];
@@ -82,7 +83,6 @@ void referenceFileToEncodedSequence(char *reference_file_path) {
 void extractAuxiliaryAndSequenceInfoFromTargetFile(char *filepath) {
     ifstream in = open_file_stream(filepath);
     char str[1024];
-    char id[100];
     char temp_char;
     int line_length;
     bool previous_upper = true;
@@ -320,6 +320,8 @@ int main(int argc, char *argv[]) {
     referenceFileToEncodedSequence(reference_file);
     constructHashTable(encoded_reference_sequence);
     extractAuxiliaryAndSequenceInfoFromTargetFile(target_file);
+    //write chromosome identifier
+    output_file << id << '\n';
     encodeLineLengths(output_file);
     outputTargetAuxiliaryData(output_file);
     matchTargetSequenceWithReferenceAndOutputToFile(output_file);

@@ -98,9 +98,6 @@ void extractIndexAndCountInfo(ifstream *in, char *line, int *indexes, int *count
         indexes[*counter] = stoi(index_and_count[0]);
         counts[(*counter)++] = stoi(index_and_count[1]);
     }
-    for (int i = 0; i < *counter; i++) {
-        cout << indexes[i] << '-' << counts[i] << '\n';
-    }
 }
 
 void extractIndexAndCharInfo(ifstream *in, char *line, int *indexes, char *chars, int *counter) {
@@ -114,9 +111,6 @@ void extractIndexAndCharInfo(ifstream *in, char *line, int *indexes, char *chars
         indexes[*counter] = stoi(index_and_char[0]);
         chars[(*counter)++] = index_and_char[1][0];
     }
-    for (int i = 0; i < *counter; i++) {
-        cout << indexes[i] << '-' << chars[i] << '\n';
-    }
 }
 
 /* Extracts auxiliary data from target file */
@@ -124,6 +118,7 @@ void extractAuxiliaryInfoFromCompressedFile(char *filepath) {
     ifstream in = open_file_stream(filepath);
     char line[2 << 19];
 
+    in.getline(line, 100);
     extractIndexAndCountInfo(&in, line, line_ending_indexes, line_ending_counts, &line_ending_array_len);
     extractIndexAndCountInfo(&in, line, lowercase_indexes, lowercase_counts, &lowercase_array_len);
     extractIndexAndCharInfo(&in, line, other_char_indexes, other_char_values, &other_char_array_len);
@@ -165,8 +160,15 @@ void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
     int output_file_index = 0;
     int reference_sequence_index = 0;
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 6; i++) {
         compressed_file.getline(compressed_file_line, 2 << 22);
+        if (i == 0) {
+            int k = 0;
+            while (compressed_file_line[k] != 0) {
+                output_file << compressed_file_line[k++];
+            }
+            output_file << '\n';
+        }
     }
 
     while (compressed_file.getline(compressed_file_line, 2 << 22)) {
@@ -229,8 +231,14 @@ int main(int argc, char *argv[]) {
     }
     char *compressed_file = argv[1];
     char *reference_file = argv[2];
+
+    sprintf(terminal_command, "./7za e %s.7z", compressed_file);
+    system(terminal_command);
+
+    string output_file_name = split(compressed_file, "_ref_")[0].append("_decomp.fa");
+
     ofstream output_file;
-    output_file.open("decomp.txt");
+    output_file.open(output_file_name);
 
     // init decompression timers
     struct timeval start;
