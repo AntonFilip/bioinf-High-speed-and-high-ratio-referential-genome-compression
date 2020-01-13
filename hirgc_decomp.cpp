@@ -134,6 +134,16 @@ void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
     ifstream compressed_file = open_file_stream(compressed_file_path);
     char compressed_file_line[1024];
 
+    for (int i = 0; i < other_char_array_len; i++) {
+        decompressed_sequence[other_char_indexes[i]] = other_char_values[i];
+    }
+
+    for (int i = 0; i < letter_N_array_len; i++) {
+        for (int j = letter_N_indexes[i]; j < letter_N_counts[i] + letter_N_indexes[i]; j++) {
+            decompressed_sequence[j] = 'N';
+        }
+    }
+
     int output_file_index = 0;
     int output_file_ACGT_index = 0;
 
