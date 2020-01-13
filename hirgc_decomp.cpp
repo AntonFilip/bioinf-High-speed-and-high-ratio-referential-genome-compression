@@ -21,7 +21,6 @@ int letter_N_array_len = 0;
 
 char *reference_sequence = new char[max_chromosome_length];
 char *decompressed_sequence = new char[max_chromosome_length];
-char *target_sequence = new char[max_chromosome_length];
 int *line_ending_indexes = new int[max_lines_in_chromosome];
 int *line_ending_counts = new int[max_lines_in_chromosome];
 int *lowercase_indexes = new int[max_lines_in_chromosome];
@@ -132,8 +131,7 @@ void extractAuxiliaryInfoFromCompressedFile(char *filepath) {
 
 void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
 
-    for (int i = 0; i < max_chromosome_length; i++)
-    {
+    for (int i = 0; i < max_chromosome_length; i++) {
         decompressed_sequence[i] = '_';
     }
 
@@ -149,6 +147,8 @@ void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
 
     int current_index = 0;
     int j = 0;
+    int output_sequence_len = 0;
+
     for (int i = 0; i < line_ending_array_len; i++) {
         int current_count = 0;
         while (current_count != line_ending_counts[i]) {
@@ -156,10 +156,7 @@ void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
             decompressed_sequence[current_index + j++] = '\n';
             current_count++;
         }
-    }
-
-    for (int i = 0; i < 200; i++) {
-        output_file << decompressed_sequence[i];
+        output_sequence_len = current_index + j;
     }
 
     ifstream compressed_file = open_file_stream(compressed_file_path);
@@ -167,6 +164,10 @@ void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
 
     int output_file_index = 0;
     int reference_sequence_index = 0;
+
+    for (int i = 0; i < 5; i++) {
+        compressed_file.getline(compressed_file_line, 1024);
+    }
 
     while (compressed_file.getline(compressed_file_line, 1024)) {
 
@@ -187,12 +188,37 @@ void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
             matching = true;
         }
 
-        while (!stop_condition) {
-            
+        int length = matching ? match_count : mismatch_encoded_chars.size();
 
+        for (int i = 0; i < length; i++) {
+            if (decompressed_sequence[output_file_index] != '_') {
+                output_file_index++;
+                i--;
+                continue;
+            }
+            char current_char;
+
+            if (matching) {
+                current_char = reference_sequence[index_of_match++];
+            } else {
+                current_char = encoding_rule[mismatch_encoded_chars[i] - '0'];
+            }
+
+            decompressed_sequence[output_file_index++] = current_char;
         }
     }
 
+    for (int i = 0; i < lowercase_array_len; i++) {
+        int index = lowercase_indexes[i];
+        int count = lowercase_counts[i];
+        for (int k = index; k < index + count; k++) {
+            decompressed_sequence[k] = tolower(decompressed_sequence[k]);
+        }
+    }
+
+    for (int i = 0; i < output_sequence_len; i++) {
+        output_file << decompressed_sequence[i];
+    }
 }
 
 int main(int argc, char *argv[]) {
