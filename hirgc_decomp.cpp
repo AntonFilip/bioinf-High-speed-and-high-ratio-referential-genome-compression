@@ -19,6 +19,7 @@ int lowercase_array_len = 0;
 int other_char_array_len = 0;
 int letter_N_array_len = 0;
 
+char compressed_file_line[2 << 22];
 char *reference_sequence = new char[max_chromosome_length];
 char *decompressed_sequence = new char[max_chromosome_length];
 int *line_ending_indexes = new int[max_lines_in_chromosome];
@@ -160,16 +161,15 @@ void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
     }
 
     ifstream compressed_file = open_file_stream(compressed_file_path);
-    char compressed_file_line[1024];
 
     int output_file_index = 0;
     int reference_sequence_index = 0;
 
     for (int i = 0; i < 5; i++) {
-        compressed_file.getline(compressed_file_line, 1024);
+        compressed_file.getline(compressed_file_line, 2 << 22);
     }
 
-    while (compressed_file.getline(compressed_file_line, 1024)) {
+    while (compressed_file.getline(compressed_file_line, 2 << 22)) {
 
         bool stop_condition = false;
         string mismatch_encoded_chars;
