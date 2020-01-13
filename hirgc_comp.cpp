@@ -328,10 +328,10 @@ int main(int argc, char *argv[]) {
 
     output_file.close();
 
-    sprintf(terminal_command, "./7za a %s.7z %s -m0=PPMd", output_file_name, output_file_name);
-    system(terminal_command);
-    sprintf(terminal_command, "rm %s", output_file_name);
-    system(terminal_command);
+//    sprintf(terminal_command, "./7za a %s.7z %s -m0=PPMd", output_file_name, output_file_name);
+//    system(terminal_command);
+//    sprintf(terminal_command, "rm %s", output_file_name);
+//    system(terminal_command);
 
 
     gettimeofday(&end, NULL);

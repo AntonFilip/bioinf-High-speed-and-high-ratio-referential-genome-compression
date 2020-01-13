@@ -240,8 +240,8 @@ int main(int argc, char *argv[]) {
     char *reference_file = argv[2];
     char terminal_command[150];
 
-    sprintf(terminal_command, "./7za e %s.7z", compressed_file);
-    system(terminal_command);
+//    sprintf(terminal_command, "./7za e %s.7z", compressed_file);
+//    system(terminal_command);
 
     string output_file_name = split(compressed_file, "_ref_")[0].append("_decomp.fa");
 
