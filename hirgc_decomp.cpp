@@ -231,6 +231,7 @@ int main(int argc, char *argv[]) {
     }
     char *compressed_file = argv[1];
     char *reference_file = argv[2];
+    char terminal_command[150];
 
     sprintf(terminal_command, "./7za e %s.7z", compressed_file);
     system(terminal_command);
