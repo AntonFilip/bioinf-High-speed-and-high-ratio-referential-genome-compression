@@ -53,7 +53,7 @@ vector<string> split(char *chars, string delimiter) {
 
 ifstream open_file_stream(char *file_path) {
     string ref_file(file_path);
-    ifstream in("../" + ref_file);
+    ifstream in(ref_file);
 
     if (!in) {
         cout << "Unable to open file: " << ref_file << "\n";
