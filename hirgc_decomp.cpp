@@ -147,6 +147,16 @@ void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
     int output_file_index = 0;
     int output_file_ACGT_index = 0;
 
+    for (int i = 0; i < line_ending_array_len; i++) {
+        int current_index = line_ending_indexes[i];
+        int current_count = 0;
+        while (current_count != line_ending_counts[i]) {
+            decompressed_sequence[current_index] = '\n';
+            current_index += current_index;
+            current_count++;
+        }
+    }
+
     int line_ending_array_index = 0;
     int current_line_ending_count = 0;
 
