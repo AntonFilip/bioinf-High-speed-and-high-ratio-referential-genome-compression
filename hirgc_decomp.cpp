@@ -8,8 +8,8 @@
 
 using namespace std;
 
-const int max_chromosome_length = 1 << 28; //maximum length of a chromosome
-const int max_lines_in_chromosome = 1 << 20; //maximum number of lines in a chromosome
+const int max_chromosome_length = 1 << 29; //maximum length of a chromosome
+const int max_lines_in_chromosome = 1 << 29; //maximum number of lines in a chromosome
 const char encoding_rule[4] = {'A', 'C', 'G', 'T'};
 
 int reference_sequence_len = 0;
@@ -18,7 +18,8 @@ int lowercase_array_len = 0;
 int other_char_array_len = 0;
 int letter_N_array_len = 0;
 
-char compressed_file_line[2 << 22];
+char compressed_file_line[2 << 29];
+char line[2 << 22];
 char *reference_sequence = new char[max_chromosome_length];
 char *decompressed_sequence = new char[max_chromosome_length];
 int *line_ending_indexes = new int[max_lines_in_chromosome];
@@ -87,7 +88,7 @@ void referenceFileToSequence(char *reference_file_path) {
 }
 
 void extractIndexAndCountInfo(ifstream *in, char *line, int *indexes, int *counts, int *counter) {
-    (*in).getline(line, 2 << 19);
+    (*in).getline(line, 2 << 22);
     vector<string> indexes_and_counts = split(line, " ");
     for (auto index_and_count_info : indexes_and_counts) {
         if (index_and_count_info == "") {
@@ -100,7 +101,7 @@ void extractIndexAndCountInfo(ifstream *in, char *line, int *indexes, int *count
 }
 
 void extractIndexAndCharInfo(ifstream *in, char *line, int *indexes, char *chars, int *counter) {
-    (*in).getline(line, 2 << 19);
+    (*in).getline(line, 2 << 22);
     vector<string> indexes_and_chars = split(line, " ");
     for (auto index_and_char_info : indexes_and_chars) {
         if (index_and_char_info == "") {
@@ -115,7 +116,6 @@ void extractIndexAndCharInfo(ifstream *in, char *line, int *indexes, char *chars
 /* Extracts auxiliary data from target file */
 void extractAuxiliaryInfoFromCompressedFile(char *filepath) {
     ifstream in = open_file_stream(filepath);
-    char line[2 << 19];
 
     in.getline(line, 100); // used to skip line with chromosome identifier
     extractIndexAndCountInfo(&in, line, line_ending_indexes, line_ending_counts, &line_ending_array_len);
@@ -246,7 +246,7 @@ int main(int argc, char *argv[]) {
     string output_file_name = split(compressed_file, "_ref_")[0].append("_decomp.fa");
 
     ofstream output_file;
-    output_file.open(output_file_name);
+    output_file.open("decomp.txt");
 
     // init decompression timers
     struct timeval start;

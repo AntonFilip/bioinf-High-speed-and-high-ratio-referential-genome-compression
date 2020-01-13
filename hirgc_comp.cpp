@@ -7,7 +7,7 @@
 
 using namespace std;
 
-const int max_chromosome_length = 1 << 28; //maximum length of a chromosome
+const int max_chromosome_length = 1 << 29; //maximum length of a chromosome
 const int hash_table_length = 1 << 20; // maximum length of hash table
 int encoded_reference_sequence_len = 0;
 int encoded_target_sequence_len = 0;
@@ -308,7 +308,7 @@ int main(int argc, char *argv[]) {
 
     sprintf(output_file_name, "%s_ref_%s", target_file, reference_file);
 
-    output_file.open(output_file_name);
+    output_file.open("result4.txt");
 
     // init compression timers
     struct timeval start;
