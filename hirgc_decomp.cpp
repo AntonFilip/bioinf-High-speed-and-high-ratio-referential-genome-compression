@@ -132,7 +132,11 @@ void extractAuxiliaryInfoFromCompressedFile(char *filepath) {
 
 void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
 
-    std::fill_n(decompressed_sequence, 200, '_');
+    for (int i = 0; i < max_chromosome_length; i++)
+    {
+        decompressed_sequence[i] = '_';
+    }
+
     for (int i = 0; i < other_char_array_len; i++) {
         decompressed_sequence[other_char_indexes[i]] = other_char_values[i];
     }
@@ -154,23 +158,21 @@ void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
         }
     }
 
+    for (int i = 0; i < 200; i++) {
+        output_file << decompressed_sequence[i];
+    }
+
     ifstream compressed_file = open_file_stream(compressed_file_path);
     char compressed_file_line[1024];
 
     int output_file_index = 0;
-    int output_file_ACGT_index = 0;
-
-    int line_ending_array_index = 0;
-    int current_line_ending_count = 0;
-    int lowercase_array_index = 0;
-    int other_char_array_index = 0;
-    int letter_N_array_index = 0;
+    int reference_sequence_index = 0;
 
     while (compressed_file.getline(compressed_file_line, 1024)) {
 
         bool stop_condition = false;
         string mismatch_encoded_chars;
-        int current_mismatch_index;
+        bool matching = true;
         int index_of_match;
         int match_count;
 
@@ -178,56 +180,17 @@ void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
         // if there is only one string after split, then we know these are mismatched characters
         if (index_and_count.size() == 1) {
             mismatch_encoded_chars = index_and_count[0];
+            matching = false;
         } else {
             index_of_match = stoi(index_and_count[0]);
             match_count = stoi(index_and_count[1]);
+            matching = true;
         }
 
         while (!stop_condition) {
-            int line_ending_index = line_ending_indexes[line_ending_array_index];
-            int lowercase_index = lowercase_indexes[lowercase_array_index];
-            int other_char_index = other_char_indexes[other_char_array_index];
-            int letter_N_index = line_ending_indexes[letter_N_array_index];
-
-            if (output_file_index % line_ending_index == 0) {
-                output_file << "\n";
-                output_file_index++;
-                current_line_ending_count++;
-
-                if (current_line_ending_count == line_ending_counts[line_ending_array_index]) {
-                    current_line_ending_count = 0;
-                    if (line_ending_array_index + 1 < line_ending_array_len) {
-                        line_ending_array_index++;
-                    }
-                }
-                continue;
-            }
-
-
-            if (output_file_index == other_char_index) {
-                output_file << other_char_values[other_char_array_index];
-                output_file_index++;
-                if (other_char_array_index + 1 < other_char_array_len) {
-                    other_char_array_index++;
-                }
-                continue;
-            }
-
-            if (output_file_index == letter_N_index) {
-                int repeatCount = letter_N_counts[letter_N_array_index];
-                for (int i = 0; i < repeatCount; i++) {
-                    output_file << "N"
-                }
-            }
-
-
-            if (output_file_index == lowercase_index) {
-
-            }
+            
 
         }
-    for (int i = 0; i < 200; i++) {
-        output_file << decompressed_sequence[i];
     }
 
 }
