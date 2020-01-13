@@ -11,10 +11,12 @@ using namespace std;
 
 const int max_chromosome_length = 1 << 28; //maximum length of a chromosome
 const int max_lines_in_chromosome = 1 << 20; //maximum number of lines in a chromosome
+const char encoding_rule[4] = {'A', 'C', 'G', 'T'};
+
 int reference_sequence_len = 0;
 int line_ending_array_len = 0;
 int lowercase_array_len = 0;
-int other_char_len = 0;
+int other_char_array_len = 0;
 int letter_N_array_len = 0;
 
 char *reference_sequence = new char[max_chromosome_length];
@@ -33,13 +35,13 @@ vector<string> split(string s, string delimiter) {
     string token;
     vector<string> res;
 
-    while ((pos_end = s.find (delimiter, pos_start)) != string::npos) {
-        token = s.substr (pos_start, pos_end - pos_start);
+    while ((pos_end = s.find(delimiter, pos_start)) != string::npos) {
+        token = s.substr(pos_start, pos_end - pos_start);
         pos_start = pos_end + delim_len;
-        res.push_back (token);
+        res.push_back(token);
     }
 
-    res.push_back (s.substr (pos_start));
+    res.push_back(s.substr(pos_start));
     return res;
 }
 
@@ -63,7 +65,7 @@ ifstream open_file_stream(char *file_path) {
 void referenceFileToSequence(char *reference_file_path) {
 
     ifstream in = open_file_stream(reference_file_path);
-    int str_len, encoded;
+    int str_len;
     char temp_c;
     char str[1024];
     in.getline(str, 1024);
@@ -75,7 +77,7 @@ void referenceFileToSequence(char *reference_file_path) {
             if (islower(temp_c)) {
                 temp_c = toupper(temp_c);
             }
-            if (temp_c == 'A' || temp_c == 'G' || temp_c == 'C' || temp_c == 'T' ) {
+            if (temp_c == 'A' || temp_c == 'G' || temp_c == 'C' || temp_c == 'T') {
                 reference_sequence[reference_sequence_len++] = temp_c;
             }
         }
@@ -96,7 +98,7 @@ void extractIndexAndCountInfo(ifstream *in, char *line, int *indexes, int *count
         counts[(*counter)++] = stoi(index_and_count[1]);
     }
     for (int i = 0; i < *counter; i++) {
-        cout << indexes[i] << '-' << counts[i] <<  '\n';
+        cout << indexes[i] << '-' << counts[i] << '\n';
     }
 }
 
@@ -112,7 +114,7 @@ void extractIndexAndCharInfo(ifstream *in, char *line, int *indexes, char *chars
         chars[(*counter)++] = index_and_char[1][0];
     }
     for (int i = 0; i < *counter; i++) {
-        cout << indexes[i] << '-' << chars[i] <<  '\n';
+        cout << indexes[i] << '-' << chars[i] << '\n';
     }
 }
 
@@ -123,8 +125,86 @@ void extractAuxiliaryInfoFromCompressedFile(char *filepath) {
 
     extractIndexAndCountInfo(&in, line, line_ending_indexes, line_ending_counts, &line_ending_array_len);
     extractIndexAndCountInfo(&in, line, lowercase_indexes, lowercase_counts, &lowercase_array_len);
-    extractIndexAndCharInfo(&in, line, other_char_indexes, other_char_values, &other_char_len);
+    extractIndexAndCharInfo(&in, line, other_char_indexes, other_char_values, &other_char_array_len);
     extractIndexAndCountInfo(&in, line, letter_N_indexes, letter_N_counts, &letter_N_array_len);
+}
+
+void decompressToOutputFile(char *compressed_file_path, ofstream &output_file) {
+    ifstream compressed_file = open_file_stream(compressed_file_path);
+    char compressed_file_line[1024];
+
+    int output_file_index = 0;
+    int output_file_ACGT_index = 0;
+
+    int line_ending_array_index = 0;
+    int current_line_ending_count = 0;
+
+    int lowercase_array_index = 0;
+    int other_char_array_index = 0;
+    int letter_N_array_index = 0;
+
+    while (compressed_file.getline(compressed_file_line, 1024)) {
+
+        bool stop_condition = false;
+        string mismatch_encoded_chars;
+        int current_mismatch_index;
+        int index_of_match;
+        int match_count;
+
+        vector<string> index_and_count = split(compressed_file_line, " ");
+        // if there is only one string after split, then we know these are mismatched characters
+        if (index_and_count.size() == 1) {
+            mismatch_encoded_chars = index_and_count[0];
+        } else {
+            index_of_match = stoi(index_and_count[0]);
+            match_count = stoi(index_and_count[1]);
+        }
+
+        while (!stop_condition) {
+            int line_ending_index = line_ending_indexes[line_ending_array_index];
+            int lowercase_index = lowercase_indexes[lowercase_array_index];
+            int other_char_index = other_char_indexes[other_char_array_index];
+            int letter_N_index = line_ending_indexes[letter_N_array_index];
+
+            if (output_file_index % line_ending_index == 0) {
+                output_file << "\n";
+                output_file_index++;
+                current_line_ending_count++;
+
+                if (current_line_ending_count == line_ending_counts[line_ending_array_index]) {
+                    current_line_ending_count = 0;
+                    if (line_ending_array_index + 1 < line_ending_array_len) {
+                        line_ending_array_index++;
+                    }
+                }
+                continue;
+            }
+
+
+            if (output_file_index == other_char_index) {
+                output_file << other_char_values[other_char_array_index];
+                output_file_index++;
+                if (other_char_array_index + 1 < other_char_array_len) {
+                    other_char_array_index++;
+                }
+                continue;
+            }
+
+            if (output_file_index == letter_N_index) {
+                int repeatCount = letter_N_counts[letter_N_array_index];
+                for (int i = 0; i < repeatCount; i++) {
+                    output_file << "N"
+                }
+            }
+
+
+            if (output_file_index == lowercase_index) {
+
+            }
+
+        }
+    }
+
 }
 
 int main(int argc, char *argv[]) {
@@ -149,6 +229,7 @@ int main(int argc, char *argv[]) {
     // steps of the algorithm
     referenceFileToSequence(reference_file);
     extractAuxiliaryInfoFromCompressedFile(compressed_file);
+    decompressToOutputFile(compressed_file, output_file);
 
     output_file.close();
 
