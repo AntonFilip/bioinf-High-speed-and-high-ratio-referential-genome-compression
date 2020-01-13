@@ -247,8 +247,6 @@ int main(int argc, char *argv[]) {
     unsigned long timer;
     gettimeofday(&start, NULL);
 
-    //TODO insert 7za extraction
-
     // steps of the algorithm
     referenceFileToSequence(reference_file);
     extractAuxiliaryInfoFromCompressedFile(compressed_file);
